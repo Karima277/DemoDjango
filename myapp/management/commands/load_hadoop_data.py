@@ -57,14 +57,14 @@ class Command(BaseCommand):
             hdfs_client = InsecureClient('http://localhost:9870', user='pc')
 
             # Read data from HDFS
-            with hdfs_client.read('/user/pc/Beauty_dataset.csv') as reader:
+            with hdfs_client.read('/user/pc/video_games_combined.csv') as reader:
                 df = pd.read_csv(reader)
 
             self.stdout.write(self.style.SUCCESS(f'Successfully read {len(df)} records from Hadoop'))
 
             # Clear existing data
-            Product.objects.all().delete()
-            self.stdout.write(self.style.SUCCESS('Cleared existing products'))
+            #Product.objects.all().delete()
+            #self.stdout.write(self.style.SUCCESS('Cleared existing products'))
 
             # Process and insert data
             records_created = 0

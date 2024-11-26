@@ -1,4 +1,98 @@
-{% extends "base.html" %} {% block title %} Home page {% endblock %}
+{% extends "base.html" %}
+{% block title %} Home page {% endblock %}
 {% block content %}
-<p>this is the home page </p>
+{% load static %}
+
+<style>
+.product-carousel {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 1rem;
+  animation: carousel-slide 15s linear infinite;
+}
+
+.product-item {
+  flex: 0 0 auto;
+  width: 300px;
+  margin-right: 1rem;
+  scroll-snap-align: start;
+}
+
+.product-item:last-child {
+  margin-right: 0;
+}
+
+@keyframes carousel-slide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+</style>
+
+<div class="font-sans">
+ 
+  <main>
+    <section class="bg-gradient-to-r from-pink-100 to-purple-100 py-12">
+      <div class="container mx-auto">
+        <h2 class="text-3xl font-bold mb-6">Excellent Products</h2>
+        <div class="product-carousel">
+          {% for product in excellent_products %}
+          <div class="product-item">
+            <div class="bg-white rounded-lg shadow-md">
+              <img src="{{ product.get_main_image }}" alt="{{ product.title }}" class="w-full rounded-t-lg">
+              <div class="p-4">
+                <h3 class="text-lg font-bold mb-2">{{ product.title }}</h3>
+                <p class="text-gray-600 mb-2">{{ product.get_rating_status }}</p>
+                {% if product.price %}
+                <div class="flex justify-between items-center">
+                  <span class="text-gradient-to-r from-pink-500 to-purple-500 font-bold">${{ product.price }}</span>
+                </div>
+                {% endif %}
+
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+         
+        </div>
+      </div>
+    </section>
+  </main>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var carousel = document.querySelector('.product-carousel');
+        var items = carousel.querySelectorAll('.product-item');
+
+        // Clone the first item and append it to the end
+        var firstItem = items[0].cloneNode(true);
+        carousel.appendChild(firstItem);
+
+        // Set up the initial transform
+        carousel.style.transform = 'translateX(0)';
+
+        // Set up the interval to move the carousel
+        var interval = setInterval(function() {
+            carousel.style.transition = 'transform 15s linear';
+            carousel.style.transform = 'translateX(-100%)';
+
+            setTimeout(function() {
+            // Move the first item to the end
+            carousel.style.transition = 'none';
+            carousel.appendChild(carousel.firstElementChild);
+            carousel.style.transform = 'translateX(0)';
+            }, 15000);
+        }, 15000);
+});
+    </script>
+    
+  
+</div>
+
+
 {% endblock %}

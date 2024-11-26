@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Product Categories</h1>
+
+    <form method="GET" action="{% url 'categories' %}" class="mb-8">
+        <div class="flex gap-4">
+            <input type="text" name="q" value="{{ query }}" class="flex-1 p-2 border rounded-lg" placeholder="Search for categories...">
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Search</button>
+        </div>
+    </form>
+
+    {% if categories %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for category in categories %}
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-2">{{ category.main_category }}</h2>
+            <p class="text-gray-600 mb-4">{{ category.num_products }} products</p>
+            <a href="{% url 'product_search' %}?main_category={{ category.main_category }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">View Products</a>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif query %}
+    <p class="text-gray-600">No categories found matching your search.</p>
+    {% else %}
+    <p class="text-gray-600">No categories available.</p>
+    {% endif %}
+</div>
+{% endblock %}
