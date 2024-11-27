@@ -11,7 +11,7 @@
         <div class="container mx-auto flex justify-between items-center">
             <a href="{% url 'home' %}" class="text-2xl font-bold text-white">ShopWise</a>
             <nav class="space-x-6">
-                <a href="#" class="hover:text-pink-200 text-lg">All Products</a>
+                <a href="{% url 'products' %}" class="hover:text-pink-200 text-lg">Top Products</a>
                 <a href="{% url 'product_search' %}" class="hover:text-pink-200 text-lg">Search</a>
                 <a href="{% url 'categories' %}" class="hover:text-pink-200 text-lg">Categories</a>
                 <a href="{% url 'stores' %}"class="hover:text-pink-200 text-lg">Stores</a>

@@ -2,8 +2,47 @@
 {% block title %} Home page {% endblock %}
 {% block content %}
 {% load static %}
-
 <style>
+.hero-section {
+  position: relative;
+  height: 500px;
+  overflow: hidden;
+}
+
+.hero-section .background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  animation: background-change 10s linear infinite;
+}
+
+@keyframes background-change {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.hero-section .content {
+  position: relative;
+  z-index: 1;
+  color: white;
+  text-align: center;
+  padding-top: 150px;
+}
 .product-carousel {
   display: flex;
   overflow-x: auto;
@@ -33,12 +72,52 @@
     transform: translateX(-100%);
   }
 }
-</style>
+.hero-section {
+  position: relative;
+  height: 600px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.3);
+}
 
+.hero-section .content {
+  position: relative;
+  z-index: 1;
+  /*color: #5A2D43;*/
+  color: white;
+  text-align: center;
+  max-width: 800px;
+  padding: 0 2rem;
+}
+
+.hero-section h1 {
+  font-size: 4rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+}
+
+.hero-section p {
+  font-size: 2rem;
+  margin-bottom: 2.5rem;
+  color: white !important;
+  font-weight: bold;
+}
+</style>
 <div class="font-sans">
- 
+    <div class="hero-section" style="background-image: url('{% static background_image %}'); background-size: cover; background-position: center;">
+        <div class="content">
+          <h1>Discover Quality Products</h1>
+          <p>Don't settle for less! Check product ratings before you buy.</p>
+          <a href="{% url 'products' %}" class="bg-pink-500 hover:bg-pink-600 text-white py-3 px-6 rounded-lg">
+            View Products
+          </a>
+        </div>
+      </div>
   <main>
-    <section class="bg-gradient-to-r from-pink-100 to-purple-100 py-12">
+    <section id="product-section" class="bg-gradient-to-r from-pink-100 to-purple-100 py-12">
       <div class="container mx-auto">
         <h2 class="text-3xl font-bold mb-6">Excellent Products</h2>
         <div class="product-carousel">
@@ -54,12 +133,10 @@
                   <span class="text-gradient-to-r from-pink-500 to-purple-500 font-bold">${{ product.price }}</span>
                 </div>
                 {% endif %}
-
               </div>
             </div>
           </div>
           {% endfor %}
-         
         </div>
       </div>
     </section>
@@ -68,7 +145,6 @@
     document.addEventListener('DOMContentLoaded', function() {
         var carousel = document.querySelector('.product-carousel');
         var items = carousel.querySelectorAll('.product-item');
-
         // Clone the first item and append it to the end
         var firstItem = items[0].cloneNode(true);
         carousel.appendChild(firstItem);
@@ -88,11 +164,8 @@
             carousel.style.transform = 'translateX(0)';
             }, 15000);
         }, 15000);
-});
-    </script>
-    
-  
+    });
+</script>
 </div>
-
-
 {% endblock %}
+

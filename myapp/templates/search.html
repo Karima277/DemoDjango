@@ -1,108 +1,72 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
+{% block title %} Product Search {% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-8">Product Search</h1>
+{% load static %}
+<div class="container mx-auto my-12">
+    <h1 class="text-4xl font-bold mb-8">Product Search Results</h1>
     
-    <form method="GET" action="{% url 'product_search' %}" class="mb-8">
-        <div class="flex gap-4">
-            <input type="text" 
-                   name="q" 
-                   value="{{ query }}" 
-                   class="flex-1 p-2 border rounded-lg"
-                   placeholder="Search for products...">
-            <button type="submit" 
-                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                Search
-            </button>
-        </div>
-    </form>
+    <div class="mb-8">
+        <form method="GET" action="{% url 'product_search' %}" class="max-w-lg mx-auto">
+            <div class="flex">
+                <input type="text" 
+                       name="q" 
+                       value="{{ query }}" 
+                       class="flex-1 p-3 border rounded-l-lg"
+                       placeholder="Search for products...">
+                <button type="submit" 
+                        class="bg-pink-500 text-white px-6 py-3 rounded-r-lg hover:bg-pink-600 transition duration-300">
+                    Search
+                </button>
+            </div>
+        </form>
+    </div>
 
     {% if products %}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {% for product in products %}
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    {% with main_image=product.get_main_image %}
-                        {% if main_image %}
-                        
-                            <div class="mb-4 relative pt-[100%]">
-                                <img src="{{ main_image }}" 
-                                        alt="{{ product.title }}"
-                                        class="absolute inset-0 w-full h-full object-contain rounded-lg"
-                                        loading="lazy"
-                                        onerror="this.onerror=null; this.src='https://via.placeholder.com/300x300?text=No+Image'"
-                                        referrerpolicy="no-referrer"
->                      
-                            </div>
-                        {% else %}
-                        
-                            <div class="mb-4 relative pt-[100%] bg-gray-100 rounded-lg">
-                                <div class="absolute inset-0 flex items-center justify-center text-gray-400">
-                                    No Image Available
-                                </div>
-                            </div>
-                        
-                        {% endif %}
-                    {% endwith %}
-                    
-                    <h2 class="text-xl font-semibold mb-2">{{ product.title }}</h2>
-                    
-                    <div class="mb-4">
-                        <span class="font-medium">Store:</span> 
-                        {{ product.store|default:"Unknown" }}
+            <div class="bg-white rounded-lg shadow-md flex flex-col">
+                <div class="relative">
+                    {% if product.get_main_image %}
+                    <img src="{{ product.get_main_image }}" alt="{{ product.title }}" class="w-full h-64 object-cover rounded-t-lg">
+                    {% else %}
+                    <div class="w-full h-64 bg-gray-200 rounded-t-lg flex items-center justify-center">
+                        <span class="text-gray-500 text-2xl">No Image</span>
                     </div>
-                    
-                    <div class="mb-4">
-                        <span class="font-medium">Rating:</span> 
+                    {% endif %}
+                    <div class="absolute top-4 right-4 bg-pink-500 text-white px-3 py-1 rounded-full">
+                        {{ product.get_rating_status }}
+                    </div>
+                </div>
+                <div class="p-4 flex-grow flex flex-col">
+                    <h3 class="text-lg font-bold mb-2">{{ product.title }}</h3>
+                    <p class="text-gray-600 mb-2">
                         {% if product.average_rating %}
-                            {{ product.average_rating|floatformat:1 }} / 5.0
-                            ({{ product.rating_number }} reviews)
+                        {{ product.average_rating }} ({{ product.rating_number }} reviews)
                         {% else %}
-                            No ratings yet
+                        No ratings
                         {% endif %}
-                    </div>
-                    
-                    <div class="mb-4">
-                        <span class="font-medium">Status:</span>
-                        <span class="ml-2 px-3 py-1 rounded-full text-sm
-                            {% if product.get_rating_status == 'Excellent' %}
-                                bg-green-100 text-green-800
-                            {% elif product.get_rating_status == 'Good' %}
-                                bg-blue-100 text-blue-800
-                            {% elif product.get_rating_status == 'Average' %}
-                                bg-yellow-100 text-yellow-800
-                            {% else %}
-                                bg-red-100 text-red-800
-                            {% endif %}
-                        ">
-                            {{ product.get_rating_status }}
-                        </span>
-                    </div>
-                    
+                    </p>
                     {% if product.price %}
-                        <div class="text-lg font-bold text-green-600">
-                            ${{ product.price }}
-                        </div>
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-gradient-to-r from-pink-500 to-purple-500 font-bold">${{ product.price }}</span>
+                    </div>
                     {% endif %}
                     
-                    {% with all_images=product.get_all_images %}
-                        {% if all_images|length > 1 %}
-                            <div class="mt-4 flex gap-2 overflow-x-auto">
-                                {% for image_url in all_images %}
-                                    <img src="{{ image_url }}" 
-                                         alt="Product thumbnail"
-                                         class="w-16 h-16 object-cover rounded"
-                                         loading="lazy"
-                                    >
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    {% endwith %}
+                    <!-- Details Button -->
+                    <a href="{% url 'product_details' product.id %}" 
+                       class="mt-auto w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600 transition duration-300 text-center">
+                        Details
+                    </a>
                 </div>
+            </div>
             {% endfor %}
         </div>
     {% elif query %}
-        <p class="text-gray-600">No products found matching your search.</p>
+        <div class="text-center text-gray-600 py-12">
+            <p class="text-2xl">No products found matching "{{ query }}"</p>
+        </div>
     {% endif %}
 </div>
 {% endblock %}

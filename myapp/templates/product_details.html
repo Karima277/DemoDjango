@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{{ product.title }} - Details{% endblock %}
+
+{% block content %}
+<div class="container mx-auto my-12">
+    <div class="grid md:grid-cols-2 gap-8">
+        <!-- Product Images -->
+        <div>
+            <div class="mb-4">
+                {% if product.get_main_image %}
+                    <img src="{{ product.get_main_image }}" 
+                         alt="{{ product.title }}" 
+                         class="w-full h-96 object-cover rounded-lg shadow-md">
+                {% else %}
+                    <div class="w-full h-96 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <span class="text-gray-500 text-2xl">No Image Available</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Additional Images -->
+            <div class="grid grid-cols-4 gap-4">
+                {% for image in product.get_all_images %}
+                    {% if image != product.get_main_image %}
+                    <img src="{{ image }}" 
+                         alt="{{ product.title }} - Additional Image" 
+                         class="w-full h-24 object-cover rounded-lg cursor-pointer">
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Product Details -->
+        <div>
+            <h1 class="text-3xl font-bold mb-4">{{ product.title }}</h1>
+            
+            <!-- Rating -->
+            <div class="mb-4 flex items-center">
+                <span class="text-xl font-semibold mr-2">
+                    {% if product.average_rating %}
+                        {{ product.average_rating|floatformat:1 }}
+                    {% else %}
+                        No ratings
+                    {% endif %}
+                </span>
+                <span class="text-gray-600">
+                    ({{ product.rating_number|default:"0" }} reviews)
+                </span>
+                <span class="ml-4 px-3 py-1 bg-pink-500 text-white rounded-full">
+                    {{ product.get_rating_status }}
+                </span>
+            </div>
+
+            <!-- Price -->
+            {% if product.price %}
+            <div class="mb-4">
+                <span class="text-2xl font-bold text-pink-600">${{ product.price }}</span>
+            </div>
+            {% endif %}
+
+            <!-- Product Details -->
+            {% if product.details %}
+            <div class="mb-6">
+                <h2 class="text-xl font-semibold mb-2">Product Details</h2>
+                <ul class="space-y-2">
+                    {% for key, value in product.details.items %}
+                        <li>
+                            <strong>{{ key|title }}:</strong> 
+                            {{ value|truncatechars:100 }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Store Information -->
+            {% if product.store %}
+            <div class="mb-4">
+                <strong>Store:</strong> {{ product.store }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Reviews Section (Placeholder - you'll need to implement reviews) -->
+    <div class="mt-12">
+        <h2 class="text-2xl font-bold mb-6">Recent Reviews</h2>
+        <!-- Add review logic here -->
+        <p class="text-gray-600">Review functionality coming soon!</p>
+    </div>
+</div>
+{% endblock %}

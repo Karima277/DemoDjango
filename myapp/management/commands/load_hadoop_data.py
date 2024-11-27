@@ -57,7 +57,7 @@ class Command(BaseCommand):
             hdfs_client = InsecureClient('http://localhost:9870', user='pc')
 
             # Read data from HDFS
-            with hdfs_client.read('/user/pc/video_games_combined.csv') as reader:
+            with hdfs_client.read('/user/pc/fashion.csv') as reader:
                 df = pd.read_csv(reader)
 
             self.stdout.write(self.style.SUCCESS(f'Successfully read {len(df)} records from Hadoop'))

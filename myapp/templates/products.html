@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %} Products {% endblock %}
+{% block content %}
+{% load static %}
+
+<div class="container mx-auto my-12">
+  <h1 class="text-4xl font-bold mb-8">Top 50 Products</h1>
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+    {% for product in products %}
+    <div class="bg-white rounded-lg shadow-md">
+      <div class="relative">
+        {% if product.get_main_image %}
+        <img src="{{ product.get_main_image }}" alt="{{ product.title }}" class="w-full h-64 object-cover rounded-t-lg">
+        {% else %}
+        <div class="w-full h-64 bg-gray-200 rounded-t-lg flex items-center justify-center">
+          <span class="text-gray-500 text-2xl">No Image</span>
+        </div>
+        {% endif %}
+        <div class="absolute top-4 right-4 bg-pink-500 text-white px-3 py-1 rounded-full">
+          {{ product.get_rating_status }}
+        </div>
+      </div>
+      <div class="p-4">
+        <h3 class="text-lg font-bold mb-2">{{ product.title }}</h3>
+        <p class="text-gray-600 mb-2">
+          {% if product.average_rating %}
+          {{ product.average_rating }} ({{ product.rating_number }} reviews)
+          {% else %}
+          No ratings
+          {% endif %}
+        </p>
+        {% if product.price %}
+        <div class="flex justify-between items-center">
+          <span class="text-gradient-to-r from-pink-500 to-purple-500 font-bold">${{ product.price }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

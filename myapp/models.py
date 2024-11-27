@@ -61,3 +61,48 @@ class Product(models.Model):
         except Exception as e:
             print(f"Error getting all images: {str(e)}")
             return []
+        
+    @classmethod
+    def get_categories(cls):
+        """
+        Retrieve unique categories with their product counts and first product's image
+        """
+        # Get unique categories and their counts
+        categories = cls.objects.values('main_category') \
+            .annotate(num_products=models.Count('id')) \
+            .order_by('-num_products')
+        
+        # Enhance each category with the first product's image
+        for category in categories:
+            # Find the first product in this category
+            first_product = cls.objects.filter(
+                main_category=category['main_category']
+            ).first()
+            
+            # Get the image for the first product
+            category_image = first_product.get_main_image() if first_product else None
+            
+            # Add image to the category dictionary
+            category['category_image'] = category_image
+        
+        return list(categories)
+    def get_reviews(self, limit=5):
+        """
+        Retrieve up to 5 reviews for the product
+        Uses parent_asin to match reviews
+        """
+        return Review.objects.filter(parent_asin=self.parent_asin).order_by('-helpful_vote')[:limit]
+class Review(models.Model):
+    rating = models.FloatField()
+    title = models.CharField(max_length=500, null=True)
+    text = models.TextField()
+    images = models.JSONField(null=True)
+    asin = models.CharField(max_length=50)
+    parent_asin = models.CharField(max_length=50)
+    user_id = models.CharField(max_length=100)
+    timestamp = models.DateTimeField()
+    helpful_vote = models.IntegerField(default=0)
+    verified_purchase = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-helpful_vote']
