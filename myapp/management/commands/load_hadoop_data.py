@@ -15,7 +15,7 @@ class Command(BaseCommand):
         try:
             # If images_data is string, try to convert to dict
             if isinstance(images_data, str):
-                try:
+                try: 
                     # Try json.loads first
                     images_dict = json.loads(images_data)
                 except json.JSONDecodeError:

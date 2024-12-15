@@ -1,82 +1,126 @@
-
+from django.db.models import Count
+from djongo import models as djongo_models
 from django.db import models
-import json
+from db_connection import db
+#product_collection=db['sample']
+from djongo import models
+from pymongo import MongoClient
+from db_connection import db
 
 class Product(models.Model):
-    main_category = models.CharField(max_length=100)
-    title = models.CharField(max_length=500)
-    average_rating = models.FloatField(null=True)
-    rating_number = models.IntegerField(null=True)
-    price = models.CharField(max_length=50, null=True)
-    store = models.CharField(max_length=200, null=True)
-    details = models.JSONField(null=True)
-    parent_asin = models.CharField(max_length=50)
-    images = models.JSONField(null=True)
+    product_id = models.CharField(max_length=255, unique=True)
+    user_rating = models.IntegerField()  # Assuming user_rating is an integer
+    review_title = models.CharField(max_length=255, null=True, blank=True)
+    review_text = models.TextField(null=True, blank=True)
+    review_images = models.JSONField(null=True, blank=True)  # Storing review images as JSON if they are arrays
+    product_images = models.JSONField(null=True, blank=True)  # JSON for handling multiple image URLs
+    product_title = models.CharField(max_length=255)
+    category = models.CharField(max_length=255, null=True, blank=True)
+    product_average_rating = models.FloatField(default=0.0)
+    store = models.CharField(max_length=255, null=True, blank=True)
+    sentiment = models.CharField(max_length=50, null=True, blank=True)
+    
+
+    
+
+    def __str__(self):
+        return self.product_title
+
+    class Meta:
+        db_table = 'sample'  # MongoDB collection name
+        managed = False  # Important for MongoDB integration
 
     def get_rating_status(self):
-        if self.average_rating is None:
+        """Determine rating status based on average rating"""
+        rating = self.product_average_rating or self.average_rating
+        if rating is None:
             return "No ratings"
-        elif self.average_rating >= 4.5:
+        elif rating >= 4.5:
             return "Excellent"
-        elif self.average_rating >= 4.0:
+        elif rating >= 4.0:
             return "Good"
-        elif self.average_rating >= 3.0:
+        elif rating >= 3.0:
             return "Average"
         else:
             return "Poor"
-    
-    #images
-
 
     def get_main_image(self):
-        """Get the main image URL"""
+        """
+        Extract the first high-resolution image or return a default
+        """
         try:
-            if not self.images:
-                return None
+            # If product_images is a string, convert it to a dictionary
+            if isinstance(self.product_images, str):
+                import ast
+                product_images = ast.literal_eval(self.product_images)
+            else:
+                product_images = self.product_images
 
+            # Check if hi_res images exist and are not empty
+            if isinstance(product_images, dict) and 'hi_res' in product_images:
+                images = product_images['hi_res']
+                return images[0] if images else '/static/default-product.jpg'
             
-            for img_type in ['hi_res', 'large', 'thumb']:
-                if self.images.get(img_type) and len(self.images[img_type]) > 0:
-                    return self.images[img_type][0]
-
-            return None
+            # If no hi_res images, check for other potential image formats
+            if isinstance(product_images, dict):
+                for img_type in ['large', 'thumb', 'main']:
+                    if img_type in product_images and product_images[img_type]:
+                        return product_images[img_type][0]
+            
+            # If images are stored directly as a list
+            if isinstance(product_images, list) and product_images:
+                return product_images[0]
+            
+            return '/static/default-product.jpg'
+        
         except Exception as e:
-            print(f"Error getting main image: {str(e)}")
-            return None
+            print(f"Error processing product images: {e}")
+            return '/static/default-product.jpg'
 
     def get_all_images(self):
         """Get all available images"""
         try:
-            if not self.images:
-                return []
+            # Convert string to dictionary if necessary
+            if isinstance(self.product_images, str):
+                import ast
+                product_images = ast.literal_eval(self.product_images)
+            else:
+                product_images = self.product_images
 
-            all_images = set() 
+            all_images = set()
             
-            # to display all images
-            for img_type in ['hi_res', 'large', 'thumb']:
-                if self.images.get(img_type):
-                    all_images.update(self.images[img_type])
-
+            if isinstance(product_images, dict):
+                for img_type in ['hi_res', 'large', 'thumb', 'main']:
+                    if product_images.get(img_type):
+                        all_images.update(product_images[img_type])
+            elif isinstance(product_images, list):
+                all_images.update(product_images)
+            
             return list(all_images)
         except Exception as e:
             print(f"Error getting all images: {str(e)}")
             return []
-        
+    # @property
+    # def review_count(self):
+    #     return self.reviews.count()
     @classmethod
     def get_categories(cls):
         """
         Retrieve unique categories with their product counts and first product's image
         """
-        # Get unique categories and their counts
-        categories = cls.objects.values('main_category') \
-            .annotate(num_products=models.Count('id')) \
+        # Prefer new category column if available, fall back to main_category
+        categories = cls.objects.values('category' if 'category' in cls._meta.get_fields() else 'main_category') \
+            .annotate(num_products=Count('id')) \
             .order_by('-num_products')
         
-        # Enhance each category with the first product's image
         for category in categories:
+            # Use the appropriate category column
+            category_name = category.get('category') or category.get('main_category')
+            
             # Find the first product in this category
             first_product = cls.objects.filter(
-                main_category=category['main_category']
+                category=category_name if 'category' in cls._meta.get_fields() else None,
+                main_category=category_name if 'category' not in cls._meta.get_fields() else None
             ).first()
             
             # Get the image for the first product
@@ -86,23 +130,8 @@ class Product(models.Model):
             category['category_image'] = category_image
         
         return list(categories)
-    def get_reviews(self, limit=5):
-        """
-        Retrieve up to 5 reviews for the product
-        Uses parent_asin to match reviews
-        """
-        return Review.objects.filter(parent_asin=self.parent_asin).order_by('-helpful_vote')[:limit]
-class Review(models.Model):
-    rating = models.FloatField()
-    title = models.CharField(max_length=500, null=True)
-    text = models.TextField()
-    images = models.JSONField(null=True)
-    asin = models.CharField(max_length=50)
-    parent_asin = models.CharField(max_length=50)
-    user_id = models.CharField(max_length=100)
-    timestamp = models.DateTimeField()
-    helpful_vote = models.IntegerField(default=0)
-    verified_purchase = models.BooleanField(default=False)
+   
+   
 
-    class Meta:
-        ordering = ['-helpful_vote']
+    def __str__(self):
+        return self.title or self.product_title or 'Unnamed Product'

@@ -11,7 +11,7 @@ def home(request):
     
     #background_images = ['background1.jpg', 'background2.jpg', 'background3.jpg', 'background4.jpg', 'background5.jpg', 'background6.jpg']
     background_image= 'image (6).png'
-    excellent_products = Product.objects.filter(average_rating__gte=4.5).order_by('-average_rating')[:7]
+    excellent_products = Product.objects.filter(product_average_rating__gte=4.5).order_by('-product_average_rating')[:7]
     cache_bust = int(time.time())
     context = {
         'excellent_products': excellent_products,
@@ -26,9 +26,9 @@ def product_search(request):
     
     if query:
         products = Product.objects.filter(
-            Q(title__icontains=query) |
+            Q(product_title__icontains=query) |
             Q(store__icontains=query)
-        ).order_by('-rating_number')
+        ).order_by('-product_average_rating')
         
     context = { 
         'query': query,
@@ -66,22 +66,63 @@ def categories_view(request):
         'query': query,
     }
     return render(request, 'categories.html', context)
+
 def products_view(request):
-    top_products = Product.objects.order_by('-average_rating')[:50]
+    
+    top_products = Product.objects.order_by('-product_average_rating')[:50]
     context = {
         'products': top_products
     }
     return render(request, 'products.html', context)
-def product_details(request, product_id):
-    try:
-        product = Product.objects.get(id=product_id)
-        reviews = product.get_reviews()
-        
-        context = {
-            'product': product,
-            'reviews': reviews,
-        }
-        return render(request, 'product_details.html', context)
-    except Product.DoesNotExist:
-        raise Http404("Product does not exist")
+from db_connection import db  
+from django.shortcuts import render, get_object_or_404
 
+from django.core.paginator import Paginator
+
+
+from django.shortcuts import render
+from db_connection import db
+
+def product_details(request, product_id):
+    # Use the 'sample' collection for products
+    product_collection = db['sample']
+    
+    # Retrieve product details
+    product = product_collection.find_one({"product_id": product_id}, {"_id": 0})
+    
+    if not product:
+        return render(request, 'error.html', {
+            'message': f'Product with ID {product_id} not found.'
+        }, status=404)
+    
+    # Retrieve reviews for the product (assuming reviews are in the same collection)
+    reviews = list(product_collection.find(
+        {
+            "product_id": product_id,
+            "review_title": {"$exists": True}  # Ensure it's a review document
+        },
+        {
+            "_id": 0, 
+            "review_title": 1, 
+            "review_text": 1, 
+            "Sentiment": 1,
+            "user_rating": 1
+        }
+    ))
+    
+    # Sentiment breakdown
+    reviews_count = len(reviews)
+    positive_reviews_count = len([r for r in reviews if r.get('Sentiment') == 'positive'])
+    neutral_reviews_count = len([r for r in reviews if r.get('Sentiment') == 'neutral'])
+    negative_reviews_count = len([r for r in reviews if r.get('Sentiment') == 'negative'])
+    
+    context = {
+        'product': product,
+        'reviews': reviews,
+        'reviews_count': reviews_count,
+        'positive_reviews_count': positive_reviews_count,
+        'neutral_reviews_count': neutral_reviews_count,
+        'negative_reviews_count': negative_reviews_count,
+    }
+    
+    return render(request, 'product_details.html', context)

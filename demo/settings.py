@@ -79,8 +79,15 @@ WSGI_APPLICATION = 'demo.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'djongo',  # Use djongo for MongoDB
+        'NAME': 'Products',  # The name of your MongoDB database
+        'CLIENT': {
+            'host': 'localhost',  # or your MongoDB host
+            'port': 27017,  # default MongoDB port
+            # Optional authentication if needed
+            # 'username': 'your_username',
+            # 'password': 'your_password',
+        }
     }
 }
 
