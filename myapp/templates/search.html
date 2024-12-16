@@ -28,8 +28,8 @@
             {% for product in products %}
             <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl">
                 <div class="relative">
-                    {% if product.get_main_image %}
-                    <img src="{{ product.get_main_image }}" 
+                    {% if product.product_image %}
+                    <img src="{{ product.product_image }}" 
                          alt="{{ product.product_title }}" 
                          class="w-full h-64 object-cover">
                     {% else %}
@@ -40,7 +40,7 @@
                     
                     <div class="absolute top-4 right-4">
                         <span class="bg-pink-500 text-white px-3 py-1 rounded-full text-sm">
-                            {{ product.get_rating_status }}
+                            {{ product.average_rating|floatformat:1 }} ★
                         </span>
                     </div>
                 </div>
@@ -49,25 +49,25 @@
                     <h3 class="text-lg font-bold mb-2 line-clamp-2">{{ product.product_title }}</h3>
                     
                     <div class="flex items-center mb-2 text-gray-600">
-                        {% if product.product_average_rating %}
                         <span class="mr-2">
-                            ★ {{ product.product_average_rating|floatformat:1 }}
+                            {{ product.reviews_count }} reviews
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center mb-2 text-gray-600">
+                        {% if product.average_rating %}
+                        <span class="mr-2">
+                            ★ {{ product.average_rating|floatformat:1 }}
                         </span>
                         {% else %}
                         <span class="text-gray-400">No ratings</span>
                         {% endif %}
                     </div>
                     
-                    {% if product.price %}
-                    <div class="mb-4">
-                        <span class="text-xl font-bold text-pink-600">${{ product.price|floatformat:2 }}</span>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="mt-auto flex space-x-2">
+                    <div class="mt-4">
                         <a href="{% url 'product_details' product.product_id %}" 
-                           class="flex-1 bg-pink-500 text-white py-2 rounded hover:bg-pink-600 transition duration-300 text-center">
-                            View Details
+                           class="w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600 transition duration-300 text-center block">
+                          View Details
                         </a>
                     </div>
                 </div>

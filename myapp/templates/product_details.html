@@ -5,20 +5,13 @@
 {% block content %}
 <div class="container mx-auto p-6">
     <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
+        <!-- Product Details -->
         <h1 class="text-4xl font-extrabold text-gray-800 mb-6">{{ product.product_title }}</h1>
-
         <div class="grid md:grid-cols-2 gap-8">
-            <!-- Product Image -->
             <div>
-                {% if product.product_images.large %}
+                {% if product.product_images %}
                     <img 
-                        src="{{ product.product_images.large.0 }}"
-                        alt="{{ product.product_title }}"
-                        class="w-full max-h-96 object-cover rounded-lg shadow-md"
-                    >
-                {% elif product.product_images.hi_res %}
-                    <img 
-                        src="{{ product.product_images.hi_res.0 }}"
+                        src="{{ product.product_images }}"
                         alt="{{ product.product_title }}"
                         class="w-full max-h-96 object-cover rounded-lg shadow-md"
                     >
@@ -28,17 +21,15 @@
                     </div>
                 {% endif %}
             </div>
-
-            <!-- Product Details -->
             <div class="space-y-4">
                 <p class="text-lg"><strong>Category:</strong> {{ product.category }}</p>
                 <p class="text-lg flex items-center">
                     <strong>Average Rating:</strong>
                     <span class="ml-2 text-lg font-semibold">
-                        {{ product.product_average_rating }}
-                        {% if product.product_average_rating == 5 %}
+                        {{ product.average_rating }}
+                        {% if product.average_rating == 5 %}
                             <span class="text-yellow-500">&#9733;</span> <!-- Gold Star -->
-                        {% elif product.product_average_rating >= 4 %}
+                        {% elif product.average_rating >= 4 %}
                             <span class="text-green-500">&#9733;</span> <!-- Green Star -->
                         {% else %}
                             <span class="text-gray-500">&#9733;</span> <!-- Gray Star -->
@@ -46,25 +37,18 @@
                     </span>
                 </p>
                 <p class="text-lg"><strong>Store:</strong> {{ product.store }}</p>
-
-                {% if product.price %}
-                    <p class="text-xl font-bold text-green-600">
-                        <strong>Price:</strong> ${{ product.price }}
-                    </p>
-                {% endif %}
             </div>
         </div>
 
         <!-- Reviews Section -->
         <div class="mt-10">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6">Reviews ({{ reviews_count }})</h2>
-
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Reviews ({{ reviews|length }})</h2>
             <div class="flex justify-between items-center text-lg mb-6">
-                <span class="text-green-600">Positive: {{ positive_reviews_count }}</span>
-                <span class="text-gray-600">Neutral: {{ neutral_reviews_count }}</span>
-                <span class="text-red-600">Negative: {{ negative_reviews_count }}</span>
+                <span class="text-green-600">Positive: {{ product.positive_reviews }}</span>
+                <span class="text-gray-600">Neutral: {{ product.neutral_reviews }}</span>
+                <span class="text-red-600">Negative: {{ product.negative_reviews }}</span>
             </div>
-
+            
             {% if reviews %}
                 <div class="space-y-4">
                     {% for review in reviews %}
@@ -86,11 +70,6 @@
                                         <span class="text-gray-600">◯ Neutral</span>
                                     {% endif %}
                                 </span>
-                                {% if review.user_rating %}
-                                    <span class="text-sm text-yellow-600">
-                                        Rating: {{ review.user_rating }} ★
-                                    </span>
-                                {% endif %}
                             </div>
                         </div>
                     {% endfor %}

@@ -6,7 +6,12 @@ from db_connection import db
 from djongo import models
 from pymongo import MongoClient
 from db_connection import db
+from django.db import models
 
+
+# Create your models here.
+
+product_collection=db['sample']
 class Product(models.Model):
     product_id = models.CharField(max_length=255, unique=True)
     user_rating = models.IntegerField()  # Assuming user_rating is an integer
@@ -45,9 +50,6 @@ class Product(models.Model):
             return "Poor"
 
     def get_main_image(self):
-        """
-        Extract the first high-resolution image or return a default
-        """
         try:
             # If product_images is a string, convert it to a dictionary
             if isinstance(self.product_images, str):
@@ -76,6 +78,27 @@ class Product(models.Model):
         except Exception as e:
             print(f"Error processing product images: {e}")
             return '/static/default-product.jpg'
+    @classmethod
+    def get_categories(cls):
+        """
+        Retrieve unique categories with their product counts and the first product's image.
+        """
+        # Retrieve categories with the count of products
+        categories = cls.objects.values('category') \
+            .annotate(num_products=Count('id')) \
+            .order_by('-num_products')
+
+        for category in categories:
+            category_name = category.get('category')
+            
+            # Get the first product in this category (limit to 1)
+            first_product = cls.objects.filter(category=category_name).first()
+
+            # Get the image for the first product in the category
+            category_image = first_product.get_main_image() if first_product else None
+            category['category_image'] = category_image
+
+        return list(categories)
 
     def get_all_images(self):
         """Get all available images"""
@@ -100,38 +123,5 @@ class Product(models.Model):
         except Exception as e:
             print(f"Error getting all images: {str(e)}")
             return []
-    # @property
-    # def review_count(self):
-    #     return self.reviews.count()
-    @classmethod
-    def get_categories(cls):
-        """
-        Retrieve unique categories with their product counts and first product's image
-        """
-        # Prefer new category column if available, fall back to main_category
-        categories = cls.objects.values('category' if 'category' in cls._meta.get_fields() else 'main_category') \
-            .annotate(num_products=Count('id')) \
-            .order_by('-num_products')
-        
-        for category in categories:
-            # Use the appropriate category column
-            category_name = category.get('category') or category.get('main_category')
-            
-            # Find the first product in this category
-            first_product = cls.objects.filter(
-                category=category_name if 'category' in cls._meta.get_fields() else None,
-                main_category=category_name if 'category' not in cls._meta.get_fields() else None
-            ).first()
-            
-            # Get the image for the first product
-            category_image = first_product.get_main_image() if first_product else None
-            
-            # Add image to the category dictionary
-            category['category_image'] = category_image
-        
-        return list(categories)
-   
-   
+    
 
-    def __str__(self):
-        return self.title or self.product_title or 'Unnamed Product'

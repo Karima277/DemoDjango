@@ -131,29 +131,29 @@
                 <h2 class="text-3xl font-bold mb-6">Excellent Products</h2>
                 
                 {% if excellent_products %}
-                    <div class="product-carousel">
-                        {% for product in excellent_products %}
-                        <div class="product-item">
-                            <div class="bg-white rounded-lg shadow-md">
-                                <img src="{{ product.get_main_image }}" alt="{{ product.title }}" class="w-full rounded-t-lg">
-                                <div class="p-4">
-                                    <h3 class="text-lg font-bold mb-2">{{ product.product_title }}</h3>
-                                    <p class="text-gray-600 mb-2">{{ product.get_rating_status }} ({{ product.product_average_rating|floatformat:1 }})</p>
-                                    {% if product.price %}
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-gradient-to-r from-pink-500 to-purple-500 font-bold">${{ product.price|floatformat:2 }}</span>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
+    <div class="product-carousel">
+        {% for product in excellent_products %}
+        <div class="product-item">
+            <div class="bg-white rounded-lg shadow-md">
+                <img src="{{ product.main_image }}" alt="{{ product.product_title }}" class="w-full rounded-t-lg">
+                <div class="p-4">
+                    <h3 class="text-lg font-bold mb-2">{{ product.product_title }}</h3>
+                    <p class="text-gray-600 mb-2">{{ product.rating_status }} ({{ product.product_average_rating|floatformat:1 }})</p>
+                    {% if product.price and product.price != 'N/A' %}
+                    <div class="flex justify-between items-center">
+                        <span class="text-gradient-to-r from-pink-500 to-purple-500 font-bold">${{ product.price }}</span>
                     </div>
-                {% else %}
-                    <div class="no-products">
-                        <p class="text-xl text-gray-600">No excellent products found at the moment.</p>
-                    </div>
-                {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="no-products">
+        <p class="text-xl text-gray-600">No excellent products found at the moment.</p>
+    </div>
+{% endif %}
             </div>
         </section>
     </main>
