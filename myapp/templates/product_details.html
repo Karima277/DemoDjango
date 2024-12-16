@@ -37,6 +37,15 @@
                     </span>
                 </p>
                 <p class="text-lg"><strong>Store:</strong> {{ product.store }}</p>
+                {% if product.price and product.price != "NaN" %}
+                    <div class="mt-auto">
+                        <span class="text-xl font-bold text-pink-600">${{ product.price|floatformat:2 }}</span>
+                    </div>
+                {% else %}
+                    <div class="mt-auto">
+                        <span class="text-xl font-bold text-gray-500">Price Not Available</span>
+                    </div>
+                {% endif %}
             </div>
         </div>
 

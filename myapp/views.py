@@ -75,8 +75,8 @@ def home(request):
     
     return render(request, 'home.html', context)
 
-from django.shortcuts import render
-from .models import product_collection
+
+
 
 def product_search(request):
     query = request.GET.get('q', '')
@@ -181,21 +181,71 @@ def stores_view(request):
     }
     return render(request, 'stores.html', context)
 
-from django.db.models import Count
+
+
 
 def categories_view(request):
-    # Retrieve all categories, annotating with the number of products in each category
-    categories = (
-        Product.objects.values('category')  # Use the 'category' field to group products
-        .annotate(num_products=Count('category')) # Count the number of products in each category
-        .order_by('-num_products')  # Optionally, order categories by the number of products
-    )
-
+    pipeline = [
+        {
+            "$group": {
+                "_id": "$category",
+                "num_products": {"$sum": 1},
+                "first_product": {"$first": "$$ROOT"}
+            }
+        },
+        {
+            "$sort": {
+                "num_products": -1
+            }
+        },
+        {
+            "$project": {
+                "category": "$_id",
+                "num_products": 1,
+                "first_product_images": "$first_product.product_images"
+            }
+        }
+    ]
+    
+    raw_categories = list(product_collection.aggregate(pipeline))
+    
+    categories = []
+    for category in raw_categories:
+        try:
+            # Process product_images
+            product_images = category.get('first_product_images', {})
+            if isinstance(product_images, str):
+                try:
+                    product_images = json.loads(product_images.replace("'", '"'))
+                except json.JSONDecodeError:
+                    product_images = {}
+            
+            # Comprehensive image fallback logic
+            image_keys_priority = ['hi_res', 'large', 'thumb']
+            processed_category_image = None
+            
+            for key in image_keys_priority:
+                images = product_images.get(key, [])
+                if images and isinstance(images, list) and images[0]:
+                    processed_category_image = images[0]
+                    break
+            
+            processed_category = {
+                'category': category.get('category', 'Uncategorized'),
+                'num_products': category.get('num_products', 0),
+                'category_image': processed_category_image
+            }
+            
+            categories.append(processed_category)
+        
+        except Exception as e:
+            print(f"Error processing category: {e}")
+    
     context = {
         'categories': categories,
-        'query': request.GET.get('search', ''),  # Handle search query if applicable
+        'query': request.GET.get('search', ''),
     }
-
+    
     return render(request, 'categories.html', context)
 
 import math
@@ -266,22 +316,23 @@ def products_view(request):
 
 # Connect to MongoDB
 client = MongoClient('mongodb://localhost:27017/')
-db = client['Products']  # Replace 'Products' with your actual DB name
-product_collection = db['sample']  # Replace 'sample' with your actual collection name
+db = client['Products']
+product_collection = db['sample']  
 
 def product_details(request, product_id):
     # MongoDB aggregation pipeline to calculate sentiment counts and fetch product data
     pipeline = [
         {
             "$match": {
-                "product_id": product_id  # Filter by the product_id
+                "product_id": product_id  
             }
         },
         {
             "$group": {
-                "_id": "$product_id",  # Group by product_id (unique product identifier)
+                "_id": "$product_id",  
                 "product_title": {"$first": "$product_title"},
-                "product_images": {"$first": "$product_images"},  # Keep full image structure
+                "price": {"$first": "$price"},
+                "product_images": {"$first": "$product_images"}, 
                 "category": {"$first": "$category"},
                 "average_rating": {"$first": "$product_average_rating"},
                 "store": {"$first": "$store"},
@@ -299,7 +350,7 @@ def product_details(request, product_id):
         {
             "$project": {
                 "_id": 0,  # Exclude the MongoDB `_id` field
-                "product_id": "$_id",  # Rename `_id` to `product_id`
+                "product_id": "$_id", 
                 "product_title": 1,
                 "product_images": 1,
                 "category": 1,
@@ -308,6 +359,7 @@ def product_details(request, product_id):
                 "positive_reviews": 1,
                 "neutral_reviews": 1,
                 "negative_reviews": 1,
+                "price": 1,
             }
         }
     ]
@@ -356,5 +408,12 @@ def product_details(request, product_id):
         {"product_id": product_id},
         {"_id": 0, "review_title": 1, "review_text": 1, "Sentiment": 1}
     ))
-    
+    if product and 'price' in product:
+        # Check if price is not NaN and is a number
+        try:
+            product['price'] = float(product['price'])
+            if math.isnan(product['price']):
+                product['price'] = None
+        except (TypeError, ValueError):
+            product['price'] = None
     return render(request, 'product_details.html', {"product": product, "reviews": reviews})

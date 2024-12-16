@@ -1,32 +1,30 @@
 {% extends "base.html" %}
-{% block title %} Categories {% endblock %}
+{% block title %}Categories{% endblock %}
 {% block content %}
 {% load static %}
+
 <div class="container mx-auto my-12">
     <h1 class="text-4xl font-bold mb-8">Product Categories</h1>
     
     {% if query %}
     <div class="mb-6">
-        <p class="text-gray-600">
-            Search results for: <span class="font-bold">{{ query }}</span>
-        </p>
+        <p class="text-gray-600">Search results for: <span class="font-bold">{{ query }}</span></p>
     </div>
     {% endif %}
-
+    
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {% for category in categories %}
         <div class="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
             <div class="relative">
-                <!-- Display category image -->
+                <!-- Display first product image for the category -->
                 {% if category.category_image %}
-                    <div class="w-full h-64 bg-cover bg-center rounded-t-lg" style="background-image: url('{{ category.category_image }}');">
-                    </div>
+                <div class="w-full h-64 bg-cover bg-center rounded-t-lg" style="background-image: url('{{ category.category_image }}');"></div>
                 {% else %}
-                    <div class="w-full h-64 bg-gray-200 rounded-t-lg flex items-center justify-center">
-                        <span class="text-gray-500 text-2xl">No Image</span>
-                    </div>
+                <div class="w-full h-64 bg-gray-200 rounded-t-lg flex items-center justify-center">
+                    <img src="{% static 'default-category-image.jpg' %}" alt="Default Category Image" class="max-w-full max-h-full object-contain">
+                </div>
                 {% endif %}
-
+                
                 <div class="absolute top-4 right-4 bg-pink-500 text-white px-3 py-1 rounded-full">
                     {{ category.num_products }} Products
                 </div>
@@ -42,7 +40,7 @@
         </div>
         {% endfor %}
     </div>
-
+    
     {% if not categories %}
     <div class="text-center py-12">
         <p class="text-gray-600 text-xl">
@@ -55,5 +53,4 @@
     </div>
     {% endif %}
 </div>
-
 {% endblock %}
