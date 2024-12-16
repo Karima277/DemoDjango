@@ -29,13 +29,27 @@
             <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl">
                 <div class="relative">
                     {% if product.product_image %}
-                    <img src="{{ product.product_image }}" 
-                         alt="{{ product.product_title }}" 
-                         class="w-full h-64 object-cover">
-                    {% else %}
-                    <div class="w-full h-64 bg-gray-200 flex items-center justify-center">
-                        <span class="text-gray-500 text-2xl">No Image</span>
-                    </div>
+                            {% if product.product_image.hi_res %}
+                            <img src="{{ product.product_image.hi_res.0 }}" 
+                                alt="{{ product.product_title }}" 
+                                class="w-full h-64 object-cover">
+                                {% elif product.product_image.large %}
+                                <img src="{{ product.product_image.large.0 }}" 
+                                    alt="{{ product.product_title }}" 
+                                    class="w-full h-64 object-cover">
+                                {% elif product.product_image.thumb %}
+                                <img src="{{ product.product_image.thumb.0 }}" 
+                                    alt="{{ product.product_title }}" 
+                                    class="w-full h-64 object-cover">
+                                {% else %}
+                                <div class="w-full h-64 bg-gray-200 flex items-center justify-center">
+                                    <span class="text-gray-500 text-2xl">No Image</span>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="w-full h-64 bg-gray-200 flex items-center justify-center">
+                                    <span class="text-gray-500 text-2xl">No Image</span>
+                                </div>
                     {% endif %}
                     
                     <div class="absolute top-4 right-4">

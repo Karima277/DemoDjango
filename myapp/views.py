@@ -81,9 +81,8 @@ from .models import product_collection
 def product_search(request):
     query = request.GET.get('q', '')
     products = []
-
+    
     if query:
-        # MongoDB aggregation pipeline to find the number of reviews for each product and order by review count
         pipeline = [
             {
                 "$match": {
@@ -95,18 +94,18 @@ def product_search(request):
             },
             {
                 "$group": {
-                    "_id": "$product_id",  # Group by product_id
+                    "_id": "$product_id",
                     "product_title": {"$first": "$product_title"},
-                    "product_image": {"$first": "$product_images.large"},
+                    "product_images": {"$first": "$product_images"},
                     "category": {"$first": "$category"},
                     "average_rating": {"$first": "$product_average_rating"},
                     "store": {"$first": "$store"},
-                    "reviews_count": {"$sum": 1}  # Count the number of reviews for each product
+                    "reviews_count": {"$sum": 1}
                 }
             },
             {
                 "$sort": {
-                    "reviews_count": -1  # Sort by reviews count in descending order
+                    "reviews_count": -1
                 }
             },
             {
@@ -114,7 +113,7 @@ def product_search(request):
                     "_id": 0,
                     "product_id": "$_id",
                     "product_title": 1,
-                    "product_image": 1,
+                    "product_images": 1,
                     "category": 1,
                     "average_rating": 1,
                     "store": 1,
@@ -123,9 +122,44 @@ def product_search(request):
             }
         ]
         
-        # Execute the aggregation pipeline
-        products = list(product_collection.aggregate(pipeline))
-
+        raw_products = list(product_collection.aggregate(pipeline))
+        
+        for product in raw_products:
+            try:
+                # Process product_images
+                product_images = product.get('product_images', {})
+                if isinstance(product_images, str):
+                    try:
+                        product_images = json.loads(product_images.replace("'", '"'))
+                    except json.JSONDecodeError:
+                        product_images = {}
+                
+                # Comprehensive image fallback logic
+                image_keys_priority = ['hi_res', 'large', 'thumb']
+                processed_product_image = {}
+                
+                for key in image_keys_priority:
+                    images = product_images.get(key, [])
+                    if images and isinstance(images, list):
+                        processed_product_image[key] = images
+                
+                # Ensure at least one image type is present
+                if not processed_product_image:
+                    processed_product_image = {'thumb': []}
+                
+                processed_product = {
+                    'product_id': str(product.get('product_id')),
+                    'product_title': product.get('product_title', 'Unnamed Product'),
+                    'product_image': processed_product_image,
+                    'average_rating': product.get('average_rating', 0),
+                    'reviews_count': product.get('reviews_count', 0)
+                }
+                
+                products.append(processed_product)
+            
+            except Exception as e:
+                print(f"Error processing product: {e}")
+    
     context = {
         'query': query,
         'products': products,
@@ -166,6 +200,8 @@ def categories_view(request):
 
 import math
 
+import json
+
 def products_view(request):
     top_products = list(product_collection.find().sort('product_average_rating', -1).limit(50))
     client.close()
@@ -177,24 +213,52 @@ def products_view(request):
             # Clean the price field to handle NaN values
             price = product.get('price', 'N/A')
             if isinstance(price, float) and math.isnan(price):
-                price = None  # Replace NaN with None or a default value like 0.0
+                price = None
+
+            # Parse product_images if it's a string
+            product_images = product.get('product_images', {})
+            if isinstance(product_images, str):
+                try:
+                    product_images = json.loads(product_images.replace("'", '"'))  # Fix single quotes
+                except json.JSONDecodeError:
+                    product_images = {}
+
+            # Comprehensive image fallback logic
+            image_keys_priority = ['hi_res', 'large', 'thumb']
+            processed_product_image = {}
             
+            for key in image_keys_priority:
+                images = product_images.get(key, [])
+                if images and isinstance(images, list):
+                    processed_product_image[key] = images
+            
+            # Ensure at least one image type is present
+            if not processed_product_image:
+                processed_product_image = {'thumb': []}
+
+            # Extract the main image with fallback
+            main_image = None
+            for key in image_keys_priority:
+                if processed_product_image.get(key):
+                    main_image = processed_product_image[key][0]
+                    break
+
             # Process the product dictionary
             processed_product = {
-                'product_id': str(product.get('product_id', product.get('_id'))),  # Handle MongoDB ObjectId
+                'product_id': str(product.get('product_id', product.get('_id'))),
                 'product_title': product.get('product_title', 'Unnamed Product'),
                 'product_average_rating': product.get('product_average_rating', 0),
-                'product_images': product.get('product_images', {}),
                 'category': product.get('category', 'Uncategorized'),
-                'price': price,  # Pass cleaned price
+                'price': price,
+                'product_images': processed_product_image,
+                'get_main_image': main_image,  # Correct image URL
             }
             products.append(processed_product)
+        
         except Exception as e:
             print(f"Error processing product: {e}")
 
-    context = {
-        'products': products
-    }
+    context = {'products': products}
     return render(request, 'products.html', context)
 
 
@@ -216,11 +280,11 @@ def product_details(request, product_id):
         {
             "$group": {
                 "_id": "$product_id",  # Group by product_id (unique product identifier)
-                "product_title": {"$first": "$product_title"},  # Get the product title
-                "product_images": {"$first": "$product_images.large"},  # Get the large product images
-                "category": {"$first": "$category"},  # Get the category
-                "average_rating": {"$first": "$product_average_rating"},  # Get the average rating
-                "store": {"$first": "$store"},  # Get the store
+                "product_title": {"$first": "$product_title"},
+                "product_images": {"$first": "$product_images"},  # Keep full image structure
+                "category": {"$first": "$category"},
+                "average_rating": {"$first": "$product_average_rating"},
+                "store": {"$first": "$store"},
                 "positive_reviews": {
                     "$sum": {"$cond": [{"$eq": ["$Sentiment", "positive"]}, 1, 0]}
                 },
@@ -250,16 +314,47 @@ def product_details(request, product_id):
     
     # Apply the aggregation pipeline to get product details and sentiment counts
     product_data = list(product_collection.aggregate(pipeline))
-
+    
     if not product_data:
         return render(request, '404.html', status=404)  # Optional: handle not found
     
     product = product_data[0]  # Extract the first (and only) product
-
+    
+    # Process product images
+    product_images = product.get('product_images', {})
+    if isinstance(product_images, str):
+        try:
+            product_images = json.loads(product_images.replace("'", '"'))
+        except json.JSONDecodeError:
+            product_images = {}
+    
+    # Comprehensive image fallback logic
+    image_keys_priority = ['hi_res', 'large', 'thumb']
+    processed_product_image = {}
+    
+    for key in image_keys_priority:
+        images = product_images.get(key, [])
+        if images and isinstance(images, list):
+            processed_product_image[key] = images
+    
+    # Ensure at least one image type is present
+    if not processed_product_image:
+        processed_product_image = {'thumb': []}
+    
+    # Select the main image
+    main_image = None
+    for key in image_keys_priority:
+        if processed_product_image.get(key):
+            main_image = processed_product_image[key][0]
+            break
+    
+    # Update product with processed images
+    product['product_images'] = main_image if main_image else None
+    
     # Fetch the reviews for this product
     reviews = list(product_collection.find(
         {"product_id": product_id},
         {"_id": 0, "review_title": 1, "review_text": 1, "Sentiment": 1}
     ))
-
+    
     return render(request, 'product_details.html', {"product": product, "reviews": reviews})
