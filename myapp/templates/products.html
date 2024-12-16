@@ -35,16 +35,15 @@
          </div>
          <p class="text-sm text-gray-600 mb-4"><strong>Category:</strong> {{ product.category }}</p>
          
-         {% if product.price %}
-         <div class="mt-auto">
-           <span class="text-xl font-bold text-pink-600">${{ product.price|floatformat:2 }}</span>
-         </div>
-         {% else %}
-         <div class="mt-auto">
-           <span class="text-xl font-bold text-gray-500">Price N/A</span>
-         </div>
-         {% endif %}
-         
+          {% if product.price and product.price != "NaN" %}
+            <div class="mt-auto">
+              <span class="text-xl font-bold text-pink-600">${{ product.price|floatformat:2 }}</span>
+            </div>
+          {% else %}
+            <div class="mt-auto">
+              <span class="text-xl font-bold text-gray-500">N/A</span>
+            </div>
+          {% endif %}
          <div class="mt-2">
            <a href="{% url 'product_details' product.product_id %}"
              class="w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600 transition duration-300 text-center block">

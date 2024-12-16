@@ -164,31 +164,33 @@ def categories_view(request):
 
     return render(request, 'categories.html', context)
 
-def products_view(request):
-    # Connect to MongoDB
-    # Fetch top 50 products, sorted by rating in descending order
-    top_products = list(product_collection.find().sort('product_average_rating', -1).limit(50))
+import math
 
-    # Close the MongoDB connection
+def products_view(request):
+    top_products = list(product_collection.find().sort('product_average_rating', -1).limit(50))
     client.close()
 
     # Convert MongoDB documents to a format that can be easily used in the template
     products = []
     for product in top_products:
         try:
-            # Use consistent keys for templates
+            # Clean the price field to handle NaN values
+            price = product.get('price', 'N/A')
+            if isinstance(price, float) and math.isnan(price):
+                price = None  # Replace NaN with None or a default value like 0.0
+            
+            # Process the product dictionary
             processed_product = {
                 'product_id': str(product.get('product_id', product.get('_id'))),  # Handle MongoDB ObjectId
                 'product_title': product.get('product_title', 'Unnamed Product'),
                 'product_average_rating': product.get('product_average_rating', 0),
                 'product_images': product.get('product_images', {}),
                 'category': product.get('category', 'Uncategorized'),
-                'price': product.get('price', 'N/A'),
+                'price': price,  # Pass cleaned price
             }
             products.append(processed_product)
         except Exception as e:
             print(f"Error processing product: {e}")
-
 
     context = {
         'products': products
